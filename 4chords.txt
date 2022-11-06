@@ -1,0 +1,10 @@
+Ré
+Do,Sol,Do,la
+Fa#
+Sol,Mi,Sol,Si,Mi
+
+D4
+C3,G3,C4,A4
+F#4
+G2,E3,G3,B3,E4
+10 notes distinctes
