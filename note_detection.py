@@ -1,10 +1,10 @@
-from scipy import signal
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import numpy as np
 import soundfile as sf
+from scipy import signal
 from numpy.fft import fft
 from numpy.fft import fftfreq
 grad = np.gradient
