@@ -23,8 +23,6 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 TODO:
 PART 2:
 ------
-0.1 - THRESHOLD (maxvolume * mult) needs to have a minimum if it works on a sample with nothing playing
-it's gonna recognise noise
 0.2 - enlever redondance des notes dans reconnaissance
 0.3 - analyse complexe différente: juste avec de pics de volume (vol[i] - vol[i-1])
 
@@ -183,6 +181,7 @@ def chord_recognition(freq):
 
 	Lnotes = []
 	Lnotesnames = []
+	redundancy = 0 
 	# for each frequency
 	for j in range(len(freq)):
 		print(f'Searching for note corresponding to frequency: {freq[j]}')
@@ -199,8 +198,15 @@ def chord_recognition(freq):
 				smallestdist_indx = i
 
 		Lnotes.append(smallestdist_indx)
-		Lnotesnames.append(notes[smallestdist_indx][0])
-
+		# add the note to the array if it isn't there yet
+		if notes[smallestdist_indx][0] not in Lnotesnames:
+			Lnotesnames.append(notes[smallestdist_indx][0])
+		# otherwise increment redundancy, goal is redundancy=0
+		else:
+			redundancy += 1
+			
+	redundancystr = f'redundancy={redundancy}'
+	Lnotesnames.append(redundancystr)
 	# printing results
 	for k in range(len(freq)):	
 		print(f'\nnote recognised: {notes[Lnotes[k]][0]} (freq: {notes[Lnotes[k]][1]}Hz)\nis the closest note to freq: {freq[k]},\nwith a distance of {np.abs(notes[Lnotes[k]][1] - freq[k])}')
