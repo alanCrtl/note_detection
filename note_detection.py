@@ -26,8 +26,9 @@ PART 2:
 0.1 - THRESHOLD (maxvolume * mult) needs to have a minimum if it works on a sample with nothing playing
 it's gonna recognise noise
 0.2 - enlever redondance des notes dans reconnaissance
+0.3 - analyse complexe différente: juste avec de pics de volume (vol[i] - vol[i-1])
 
-GOAL: My code is good at recognising chords so:
+GOAL: chunk analysis
 1 - noise reduction gate, high pass filter
 2 - catch the start of notes/chords by checking volume increase (derivative of abs(data))
 find local minima of gradient(movingavg(left)) correspond to note playing
@@ -301,7 +302,7 @@ def sample_around_note(msi, dt):
 			start = -1
 			end = -1
 
-	# removing small too short in duration
+	# removing samples too short in duration
 	toPop = []
 	for j in range(len(samples_times)):
 		# criteria on duration in ms
@@ -309,6 +310,7 @@ def sample_around_note(msi, dt):
 			toPop.append(samples_times[j])
 	truesamples_times = [s for s in samples_times if s not in toPop ]
 
+	# TODO: remove rectangle corresponding to low volume
 	# printing press
 	for k in range(len(truesamples_times)):
 		print(f'duration of bloc {k}: {"{:.2f}".format(truesamples_times[k][2] * 1000)} ms')
@@ -454,7 +456,7 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
 	# maybe I should just look at volume peaks...
 	if SA == 0:
 		MAORDER=6000 # moving average order
-		MSIORDER=3300 # moving signed indicator order
+		MSIORDER=5000 # moving signed indicator order
 		# gradient of signal
 		figg, (a0, a1) = plt.subplots(2, 1)
 		a0.set_title("Signal on left channel in absolute value")
@@ -481,7 +483,6 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
 		# size of the window of search for the moving signed indicator
 		a1.axvline(T//2 + 2 * MSIORDER * dt, alpha=0.4, color='orange') 
 		a1.axvline(T//2 - 2 * MSIORDER * dt, alpha=0.4, color='orange') 
-		a1.plot(t, moving_signed_indicator(gradma, MSIORDER, np.max(grad(abs(left)))), alpha=0.5, color='red')
 
 	# Start of note/chord analysis for each note/chord detected
 	# =============================================================
