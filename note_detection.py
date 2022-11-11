@@ -20,10 +20,8 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 - save frequencies based on highest amplitudes with a threshold rule
 - distance algorithm to figure out note correspondance
 
-TODO:
 PART 2:
 ------
-0.0 - ax.set(xlabel="Index", ylabel="Value", title = f"{sorter} sort")  
 0.3 - analyse complexe différente: juste avec de pics de volume (vol[i] - vol[i-1])
 
 GOAL: chunk analysis
@@ -184,7 +182,7 @@ def chord_recognition(freq):
 	redundancy = 0 
 	# for each frequency
 	for j in range(len(freq)):
-		print(f'Searching for note corresponding to frequency: {freq[j]}')
+		print(f'Searching for note corresponding to frequency: {freq[j]:.2f}')
 		# initialise to note C0
 		smallestdist = np.abs(notes[0][1] - freq[j])
 		smallestdist_indx = 0
@@ -206,11 +204,11 @@ def chord_recognition(freq):
 			redundancy += 1
 			
 	redundancystr = f'redundancy={redundancy}'
-	Lnotesnames.append(redundancystr)
+	
 	# printing results
 	for k in range(len(freq)):	
-		print(f'\nnote recognised: {notes[Lnotes[k]][0]} (freq: {notes[Lnotes[k]][1]}Hz)\nis the closest note to freq: {freq[k]},\nwith a distance of {np.abs(notes[Lnotes[k]][1] - freq[k])}')
-	print(f'\n{Lnotesnames}\n{len(Lnotesnames)} notes')
+		print(f'\nnote recognised: {notes[Lnotes[k]][0]} (freq: {notes[Lnotes[k]][1]:.2f} Hz)\nis the closest note to freq: {freq[k]:.2f} Hz,\nwith a distance of {np.abs(notes[Lnotes[k]][1] - freq[k]):.2f}')
+	print(f'\n{Lnotesnames} {redundancystr}\n{len(Lnotesnames)} notes')
 
 	return(Lnotesnames)
 
@@ -324,7 +322,7 @@ def sample_around_note(msi, dt):
 	return(truesamples_times)
 
 # from signal sample return the chords/notes found
-def sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
+def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 	song = []
 	fig, plot = plt.subplots(len(sample_times))
 
@@ -337,7 +335,7 @@ def sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		sample = data[start_point: start_point + N] # sampling the actual data
 
 		# filter out low frequencies
-		b, a = signal.butter(2, 60*dt/2, 'hp')
+		b, a = signal.butter(5, 50*dt, 'hp')
 		sample = signal.filtfilt(b, a, sample) 
 
 		# fourier
@@ -359,7 +357,7 @@ def sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 
 		# computing the amplitude threshold
 		THRESHOLD = np.max(fourier_mag_plot) * THRESHOLDMULT
-		print(f'------\nTHRESHOLD = {THRESHOLD}')
+		print(f'\n\n===================\nTHRESHOLD = {THRESHOLD}')
 
 		# et pouf ça marche
 		plot[v].plot(f_plot, fourier_mag_plot)
@@ -423,12 +421,12 @@ def simple_sample_analysis(data, N, dt, THRESHOLDMULT, FJUMP):
 # FJUMP : to skip peaks corresponding to a note; to avoid redundancy.
 # GRAPHS : allows for graphs to be displayed
 # SA : stands for 'simple analysis' meaning you fourier the all audio at once
-def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
-
+def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# preparing the data
 	# =============================================================
 	# data: 2D ndarray of audio data, fs: sample frequency
 	data, fs = sf.read(filename, dtype='float32')
+
 	# extract left and right audio channel, we'll use only left
 	if len(np.shape(data))==2:
 		left = data[:,0]
@@ -437,6 +435,7 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
 	else:
 		left = data
 		right = data
+
 	left = left / np.max(left) # scaling volume
 	left = remove_lowvolume(left, 0.2) # low volume removal
 
@@ -454,15 +453,15 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
 	g1.set_title("Signal on right channel")
 	g1.plot(t, right)
 
-	# complex signal analysis, per chunk analysis of the signal
+	# complex signal analysis; per chunk analysis of the signal
 	# =============================================================
 	# goal is to catch the local minimas of the moving average of the gradient
 	# which corresponds to a peak in volume, so we know a note/chord is played
 	# around that area
-	# maybe I should just look at volume peaks...
-	if SA == 0:
+	# TODO: maybe I should just look at volume peaks...
+	if CA:
 		MAORDER=6000 # moving average order
-		MSIORDER=5000 # moving signed indicator order
+		MSIORDER=3000 # moving signed indicator order
 		# gradient of signal
 		figg, (a0, a1) = plt.subplots(2, 1)
 		a0.set_title("Signal on left channel in absolute value")
@@ -492,14 +491,19 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, SA=1):
 
 	# Start of note/chord analysis for each note/chord detected
 	# =============================================================
-	if SA:
-		song = simple_sample_analysis(left, N, dt, THRESHOLDMULT, FJUMP)
-	else:
+	# tries to cut the audio into sample where each sample corresponds to a
+	# single note/chord being played and then do the simple analysis on these
+	# samples
+	if CA:
 		samples_times = sample_around_note(mamsi, dt)
-		song = sample_analysis(left, samples_times, dt, THRESHOLDMULT, FJUMP)
+		song = complex_sample_analysis(left, samples_times, dt, THRESHOLDMULT, FJUMP)
+	# simple analysis of the entire audio
+	else:
+		song = simple_sample_analysis(left, N, dt, THRESHOLDMULT, FJUMP)
 
-	print(song)
-	print(f'------\n {"{:.2f}".format((time.time() - start_time))} sec')
+
+	print(f"------\nsong : {song}")
+	print(f'------\n {(time.time() - start_time):.2f} sec')
 
 	if GRAPHS==1:
 		plt.tight_layout()
@@ -511,11 +515,11 @@ if __name__ == "__main__":
 	parser.add_argument("filename", help="wav file to do note detection on")
 	parser.add_argument("-g", "--graphs", metavar="n", help="show graphs (default=0) (int)", type=int, default=0)
 	parser.add_argument("-tmult", "--thresholdMult", metavar="n", help="multiplier to the average amplitude that will establish the threshold to be considered a note; is percentage of max amplitude (default=0.5) (float)", type=float, default=0.5)
-	parser.add_argument("-fj", "--freqjump", metavar="n", help="frequency jumps to be considered same frequency, so as not to pick every frequency around a peak (default=30) (int)", type=int, default=30)
-	parser.add_argument("-sa","--simpleanalysis", metavar="n", help="decides wether you want chord analysis on the all audio or per chunk (default=1) (int)", type=int, default=1)
+	parser.add_argument("-fj", "--freqjump", metavar="n", help="frequency jumps to be considered same frequency, so as not to pick every frequency around a peak (default=10) (int)", type=int, default=10)
+	parser.add_argument("-ca","--complexanalysis", metavar="n", help="between multiple chord analysis or single note/chord analysis (default=0) (int)", type=int, default=0)
 
 	args = parser.parse_args()
 	start_time = time.time()
 
-	main(args.filename, args.graphs, args.thresholdMult, args.freqjump, args.simpleanalysis)
+	main(args.filename, args.graphs, args.thresholdMult, args.freqjump, args.complexanalysis)
 
