@@ -23,7 +23,7 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 TODO:
 PART 2:
 ------
-0.2 - enlever redondance des notes dans reconnaissance
+0.0 - ax.set(xlabel="Index", ylabel="Value", title = f"{sorter} sort")  
 0.3 - analyse complexe différente: juste avec de pics de volume (vol[i] - vol[i-1])
 
 GOAL: chunk analysis
@@ -511,7 +511,7 @@ if __name__ == "__main__":
 	parser.add_argument("filename", help="wav file to do note detection on")
 	parser.add_argument("-g", "--graphs", metavar="n", help="show graphs (default=0) (int)", type=int, default=0)
 	parser.add_argument("-tmult", "--thresholdMult", metavar="n", help="multiplier to the average amplitude that will establish the threshold to be considered a note; is percentage of max amplitude (default=0.5) (float)", type=float, default=0.5)
-	parser.add_argument("-fj", "--freqjump", metavar="n", help="frequency jumps to be considered same frequency, so as not to pick every frequency around a peak (default=12) (int)", type=int, default=12)
+	parser.add_argument("-fj", "--freqjump", metavar="n", help="frequency jumps to be considered same frequency, so as not to pick every frequency around a peak (default=30) (int)", type=int, default=30)
 	parser.add_argument("-sa","--simpleanalysis", metavar="n", help="decides wether you want chord analysis on the all audio or per chunk (default=1) (int)", type=int, default=1)
 
 	args = parser.parse_args()
