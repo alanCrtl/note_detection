@@ -357,6 +357,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		print(f'\n\n===================\nTHRESHOLD = {THRESHOLD}')
 
 		# et pouf ça marche
+		print(len(sample_times))
 		plot[v].plot(f_plot, fourier_mag_plot)
 		plot[v].set_title("Magnitude Spectrum via Fourier")
 		plot[v].axhline(THRESHOLD, color='red')
@@ -490,7 +491,11 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# samples
 	if CA:
 		samples_times = sample_of_predicted_note(gmamsi, dt)
-		song = complex_sample_analysis(left, samples_times, dt, THRESHOLDMULT, FJUMP)
+		# in case you do Complex Analysis on a single chord/note
+		if len(samples_times)==1:
+			song = simple_sample_analysis(left, N, dt, THRESHOLDMULT, FJUMP)
+		else:
+			song = complex_sample_analysis(left, samples_times, dt, THRESHOLDMULT, FJUMP)
 	# simple analysis of the entire audio
 	else:
 		song = simple_sample_analysis(left, N, dt, THRESHOLDMULT, FJUMP)
