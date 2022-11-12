@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import argparse
 import numpy as np
 import soundfile as sf
+import memorycol as mc
 from scipy import signal
 from numpy.fft import fft
 from numpy.fft import fftfreq
@@ -517,7 +518,12 @@ if __name__ == "__main__":
 	parser.add_argument("-ca","--complexanalysis", metavar="n", help="between multiple chord analysis or single note/chord analysis (default=0) (int)", type=int, default=0)
 
 	args = parser.parse_args()
+	
 	start_time = time.time()
-
+	mc.tracemalloc.start()
+	
 	main(args.filename, args.graphs, args.thresholdMult, args.freqjump, args.complexanalysis)
+
+	snapshot = mc.tracemalloc.take_snapshot()
+	mc.display_top(snapshot)
 
