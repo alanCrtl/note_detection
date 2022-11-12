@@ -22,17 +22,15 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 
 PART 2:
 ------
-0.3 - analyse complexe différente: juste avec de pics de volume (vol[i] - vol[i-1])
-
 GOAL: chunk analysis
 1 - noise reduction gate, high pass filter
 2 - catch the start of notes/chords by checking volume increase (derivative of abs(data))
 find local minima of gradient(movingavg(left)) correspond to note playing
 from this analysis only consider wide enough rectangles and volume past a certain level
-
 3 - sample the audio at the start of notes/chords and before the next one
 4 - chord analysis on the sample
 5 - result: list of single notes or chords played through time
+TODO: remove rectangle corresponding to low volume
 6 - try : input: (Notes, Times) output: Sheet Music
 5.9 - tempo (check interval between note starts)
 
@@ -282,19 +280,19 @@ def moving_signed_indicator(data, order=1, scaler=1):
 # set volume to 0 if it's below a percentage of maxvolume
 # thold : between 0 and 1 makes the most sense
 # data : signal array
-def remove_lowvolume(data, thold=0.1):
+def remove_lowvolume(data, THOLD=0.1):
 	maxvol = np.max(data)
 	for i in range(len(data)):
-		if abs(data[i]) < thold * maxvol:
+		if abs(data[i]) < THOLD * maxvol:
 			data[i] = 0
 	return(data)
 
-# a sample is a start and an end where a note is predicted to 
-# have been played
-def sample_around_note(msi, dt):
+# a sample is a start and an end where a note is predicted to've been played
+def sample_of_predicted_note(msi, dt):
 	samples_times = []
 	start = -1
 	end = -1
+	# deducing sample based on msi
 	for i in range(len(msi)):
 		# rectangle search
 		if msi[i] == 1 and start == -1:
@@ -306,15 +304,14 @@ def sample_around_note(msi, dt):
 			start = -1
 			end = -1
 
-	# removing samples too short in duration
 	toPop = []
+	MIN_SAMPLE_DURATION = 20 # in ms
+	# removing samples too short in duration
 	for j in range(len(samples_times)):
-		# criteria on duration in ms
-		if samples_times[j][2] * 1000 <= 20: 
+		if samples_times[j][2] * 1000 <= MIN_SAMPLE_DURATION: 
 			toPop.append(samples_times[j])
 	truesamples_times = [s for s in samples_times if s not in toPop ]
 
-	# TODO: remove rectangle corresponding to low volume
 	# printing press
 	for k in range(len(truesamples_times)):
 		print(f'duration of bloc {k}: {"{:.2f}".format(truesamples_times[k][2] * 1000)} ms')
@@ -335,7 +332,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		sample = data[start_point: start_point + N] # sampling the actual data
 
 		# filter out low frequencies
-		b, a = signal.butter(5, 50*dt, 'hp')
+		b, a = signal.butter(5, 90*dt, 'hp')
 		sample = signal.filtfilt(b, a, sample) 
 
 		# fourier
@@ -459,7 +456,6 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# goal is to catch the local minimas of the moving average of the gradient
 	# which corresponds to a peak in volume, so we know a note/chord is played
 	# around that area
-	# TODO: maybe I should just look at volume peaks...
 	if CA:
 		MAORDER=6000 # moving average order
 		MSIORDER=3000 # moving signed indicator order
@@ -469,26 +465,23 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 		a0.set_xlabel("time (sec)")
 		a0.plot(t, abs(left))
 
-		# yes
+		# try to detect local minima of the audio
 		ma = moving_average(abs(left), MAORDER)
 		gradma = grad(ma)
-		mamsi = moving_signed_indicator(gradma, MSIORDER, np.max(left))
-		mamsi2 = moving_signed_indicator(gradma, MSIORDER, np.max(gradma))
+		gmamsi = moving_signed_indicator(gradma, MSIORDER, np.max(left))
+		# gmamsi2 = moving_signed_indicator(gradma, MSIORDER, np.max(gradma))
 		
 		# plots
 		a0.plot(t, ma, alpha=0.5, color='red')
-		a0.plot(t, mamsi, alpha=0.4, color='green')
+		a0.plot(t, gmamsi, alpha=0.4, color='green')
 		# size of the window of search for the moving signed indicator
-		a0.axvline(T//2 + 2 * MSIORDER * dt, alpha=0.4, color='orange') 
-		a0.axvline(T//2 - 2 * MSIORDER * dt, alpha=0.4, color='orange') 
+		a0.axvline(T//2 + MSIORDER * dt, alpha=0.4, color='orange') 
+		a0.axvline(T//2 - MSIORDER * dt, alpha=0.4, color='orange') 
 
 		# plots
 		a1.set_title("gradient of ma(abs(left))")
 		a1.plot(t, gradma)
-		a1.plot(t, mamsi2, alpha=0.4, color='green')
-		# size of the window of search for the moving signed indicator
-		a1.axvline(T//2 + 2 * MSIORDER * dt, alpha=0.4, color='orange') 
-		a1.axvline(T//2 - 2 * MSIORDER * dt, alpha=0.4, color='orange') 
+		# a1.plot(t, gmamsi2, alpha=0.4, color='green')
 
 	# Start of note/chord analysis for each note/chord detected
 	# =============================================================
@@ -496,15 +489,14 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# single note/chord being played and then do the simple analysis on these
 	# samples
 	if CA:
-		samples_times = sample_around_note(mamsi, dt)
+		samples_times = sample_of_predicted_note(gmamsi, dt)
 		song = complex_sample_analysis(left, samples_times, dt, THRESHOLDMULT, FJUMP)
 	# simple analysis of the entire audio
 	else:
 		song = simple_sample_analysis(left, N, dt, THRESHOLDMULT, FJUMP)
 
-
 	print(f"------\nsong : {song}")
-	print(f'------\n {(time.time() - start_time):.2f} sec')
+	print(f'------\n{(time.time() - start_time):.2f} sec')
 
 	if GRAPHS==1:
 		plt.tight_layout()
@@ -515,7 +507,7 @@ if __name__ == "__main__":
 	
 	parser.add_argument("filename", help="wav file to do note detection on")
 	parser.add_argument("-g", "--graphs", metavar="n", help="show graphs (default=0) (int)", type=int, default=0)
-	parser.add_argument("-tmult", "--thresholdMult", metavar="n", help="multiplier to the average amplitude that will establish the threshold to be considered a note; is percentage of max amplitude (default=0.5) (float)", type=float, default=0.5)
+	parser.add_argument("-tmult", "--thresholdMult", metavar="n", help="multiplier to the average amplitude that will establish the threshold to be considered a note; is percentage of max amplitude (default=0.6) (float)", type=float, default=0.6)
 	parser.add_argument("-fj", "--freqjump", metavar="n", help="frequency jumps to be considered same frequency, so as not to pick every frequency around a peak (default=10) (int)", type=int, default=10)
 	parser.add_argument("-ca","--complexanalysis", metavar="n", help="between multiple chord analysis or single note/chord analysis (default=0) (int)", type=int, default=0)
 
