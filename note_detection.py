@@ -420,7 +420,8 @@ def simple_sample_analysis(data, N, dt, THRESHOLDMULT, FJUMP):
 # THRESHOLDMULT : multiplier for the amplitude threshold of note recognition
 # FJUMP : to skip peaks corresponding to a note; to avoid redundancy.
 # GRAPHS : allows for graphs to be displayed
-# SA : stands for 'simple analysis' meaning you fourier the all audio at once
+# CA : stands for 'complex analysis' meaning you fourier parts of the audio 
+# instead of everything all at once
 def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# preparing the data
 	# =============================================================
