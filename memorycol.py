@@ -24,7 +24,7 @@ class bcolors:
 # print(f"{bcolors.HEADER}Whatsup\n{bcolors.OKBLUE}Whatsup\n{bcolors.OKCYAN}Whatsup\n{bcolors.OKGREEN}Whatsup\n{bcolors.WARNING}Whatsup\n{bcolors.FAIL}Whatsup\n{bcolors.ENDC}Whatsup\n{bcolors.BOLD}Whatsup\n{bcolors.UNDERLINE}Whatsup{bcolors.ENDC}\n")
 # ==============================================================
 
-def display_top(snapshot, key_type='lineno', limit=5):
+def display_top(snapshot, key_type='lineno', limit=3):
 	snapshot = snapshot.filter_traces((
 		tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
 		tracemalloc.Filter(False, "<unknown>"),
