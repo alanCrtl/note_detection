@@ -12,9 +12,16 @@ grad = np.gradient
 abs = np.abs
 sign = np.sign
 
+# pour lancer: python3 note_detection.py 4chords.wav -g=1
 """
+TODO: Recherche idées pour le seuil
+recherche des idées pour les harmoniques
+plusieurs notes sans pedales
+Brancher piano directement à ordi
+
+
 PART 1:
------- 
+-------
 GOAL: audio of a note or a chord, use fourier transform to recognise notes played
 - draw graph
 - figure out how to draw amplitude spectrum
@@ -22,7 +29,7 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 - distance algorithm to figure out note correspondance
 
 PART 2:
-------
+-------
 GOAL: chunk analysis
 1 - noise reduction gate, high pass filter
 2 - catch the start of notes/chords by checking volume increase (derivative of abs(data))
@@ -333,7 +340,8 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		sample = data[start_point: start_point + N] # sampling the actual data
 
 		# filter out low frequencies
-		b, a = signal.butter(5, 90*dt, 'hp')
+		# butter(ordre, freq de coupure, type(hp=passehaut), freq d'echantillonage)
+		b, a = signal.butter(5, 90, 'hp', fs=1/dt)
 		sample = signal.filtfilt(b, a, sample) 
 
 		# fourier
@@ -360,7 +368,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		# et pouf ça marche
 		print(len(sample_times))
 		plot[v].plot(f_plot, fourier_mag_plot)
-		plot[v].set_title("Magnitude Spectrum via Fourier")
+		plot[v].set(title="Magnitude Spectrum via Fourier", xlabel="frequence (Hz)", ylabel="amplitude")
 		plot[v].axhline(THRESHOLD, color='red')
 		plot[v].set_xlim(left=-1000,right=5000)
 
@@ -400,6 +408,8 @@ def simple_sample_analysis(data, N, dt, THRESHOLDMULT, FJUMP):
 	plt.figure()
 	plt.plot(f_plot, fourier_mag_plot)
 	plt.title("Magnitude Spectrum via Fourier")
+	plt.xlabel(xlabel="frequence (Hz)")
+	plt.ylabel(ylabel="amplitude")
 	plt.axhline(THRESHOLD, color='red')
 	plt.xlim(left=-1000,right=5000)
 
@@ -448,9 +458,11 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 	# =============================================================
 	fig, (g0, g1) = plt.subplots(2,1)
 	g0.set_title("Signal on left channel")
+	g0.set(xlabel="time (sec)", ylabel="volume")
 	g0.plot(t, left)
 
 	g1.set_title("Signal on right channel")
+	g1.set(xlabel="time (sec)", ylabel="volume")
 	g1.plot(t, right)
 
 	# complex signal analysis; per chunk analysis of the signal
@@ -520,10 +532,6 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	start_time = time.time()
-	mc.tracemalloc.start()
-	
 	main(args.filename, args.graphs, args.thresholdMult, args.freqjump, args.complexanalysis)
 
-	snapshot = mc.tracemalloc.take_snapshot()
-	mc.display_top(snapshot)
 
