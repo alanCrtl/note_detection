@@ -12,41 +12,6 @@ grad = np.gradient
 abs = np.abs
 sign = np.sign
 
-# pour lancer: python3 note_detection.py 4chords.wav -g=1
-"""
-TODO: Recherche idées pour le seuil
-recherche des idées pour les harmoniques
-plusieurs notes sans pedales
-Brancher piano directement à ordi
-
-
-PART 1:
--------
-GOAL: audio of a note or a chord, use fourier transform to recognise notes played
-- draw graph
-- figure out how to draw amplitude spectrum
-- save frequencies based on highest amplitudes with a threshold rule
-- distance algorithm to figure out note correspondance
-
-PART 2:
--------
-GOAL: chunk analysis
-1 - noise reduction gate, high pass filter
-2 - catch the start of notes/chords by checking volume increase (derivative of abs(data))
-find local minima of gradient(movingavg(left)) correspond to note playing
-from this analysis only consider wide enough rectangles and volume past a certain level
-3 - sample the audio at the start of notes/chords and before the next one
-4 - chord analysis on the sample
-5 - result: list of single notes or chords played through time
-TODO: remove rectangle corresponding to low volume
-6 - try : input: (Notes, Times) output: Sheet Music
-5.9 - tempo (check interval between note starts)
-
-https://python-course.eu/applications-python/musical-scores-with-python.php
-https://www.google.com/search?q=python+draw+on+sheet+music&oq=python+draw+on+sheet+music+&aqs=chrome..69i57j33i160l5j33i22i29i30j33i15i22i29i30.6604j0j7&sourceid=chrome&ie=UTF-8
-
-"""
-
 notes = [
     ['C0', 16.35, []],
     ['C#0/Db0', 17.32, []],
@@ -348,7 +313,6 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		fourier = fft(sample)
 		fourier_mag = np.abs(fourier)/N 
 
-		# puella magi madoka magica
 		# fstep = 1/T # 1/N*dt comme dans np.fft.fftfreq
 		# freqscale = (N-1)*fstep
 		# f = np.linspace(0, freqscale, N)
@@ -365,7 +329,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		THRESHOLD = np.max(fourier_mag_plot) * THRESHOLDMULT
 		print(f'\n\n===================\nTHRESHOLD = {THRESHOLD}')
 
-		# et pouf ça marche
+		# on affiche le spectre en amplitude
 		print(len(sample_times))
 		plot[v].plot(f_plot, fourier_mag_plot)
 		plot[v].set(title="Magnitude Spectrum via Fourier", xlabel="frequence (Hz)", ylabel="amplitude")
@@ -387,7 +351,6 @@ def simple_sample_analysis(data, N, dt, THRESHOLDMULT, FJUMP):
 	fourier = fft(data)
 	fourier_mag = np.abs(fourier)/N 
 
-	# puella magi madoka magica
 	# fstep = 1/T # 1/N*dt comme dans np.fft.fftfreq
 	# freqscale = (N-1)*fstep
 	# f = np.linspace(0, freqscale, N)
@@ -404,7 +367,7 @@ def simple_sample_analysis(data, N, dt, THRESHOLDMULT, FJUMP):
 	THRESHOLD = np.max(fourier_mag_plot) * THRESHOLDMULT
 	print(f'------\nTHRESHOLD = {THRESHOLD}')
 
-	# et pouf ça marche
+	# on affiche le spectre en amplitude
 	plt.figure()
 	plt.plot(f_plot, fourier_mag_plot)
 	plt.title("Magnitude Spectrum via Fourier")
@@ -477,13 +440,13 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 		figg, (a0, a1) = plt.subplots(2, 1)
 		a0.set_title("Signal on left channel in absolute value")
 		a0.set_xlabel("time (sec)")
-		a0.plot(t, abs(left))
+		a0.plot(t, abs(left)) # abs to better see the peaks
 
 		# try to detect local minima of the audio
 		ma = moving_average(abs(left), MAORDER)
 		gradma = grad(ma)
 		gmamsi = moving_signed_indicator(gradma, MSIORDER, np.max(left))
-		# gmamsi2 = moving_signed_indicator(gradma, MSIORDER, np.max(gradma))
+		gmamsi2 = moving_signed_indicator(gradma, MSIORDER, np.max(gradma))
 		
 		# plots
 		a0.plot(t, ma, alpha=0.5, color='red')
@@ -495,7 +458,7 @@ def main(filename, GRAPHS=0, THRESHOLDMULT=0.5, FJUMP=0, CA=0):
 		# plots
 		a1.set_title("gradient of ma(abs(left))")
 		a1.plot(t, gradma)
-		# a1.plot(t, gmamsi2, alpha=0.4, color='green')
+		a1.plot(t, gmamsi2, alpha=0.4, color='green')
 
 	# Start of note/chord analysis for each note/chord detected
 	# =============================================================
