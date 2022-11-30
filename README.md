@@ -2,13 +2,18 @@
 
 pour lancer dans le terminal: 
 -----
+```
 $ python3 note_detection.py 4chords.wav -g=1 -ca=1
 $ python3 note_detection.py Dsharp3.wav -g=1 
-
+```
 pour plus d'infos sur les arguments:
 ------
+```
 $ python3 note_detection.py -h
+```
 
+OBJECTIFS
+------
 PART 1:
 -------
 GOAL: audio of a note or a chord, use fourier transform to recognise notes played
@@ -20,13 +25,13 @@ GOAL: audio of a note or a chord, use fourier transform to recognise notes playe
 PART 2:
 -------
 GOAL: chunk analysis
-1 - noise reduction gate, high pass filter
-2 - catch the start of notes/chords by checking volume increase (derivative of abs(data))
+ - noise reduction gate, high pass filter
+ - catch the start of notes/chords by checking volume increase (derivative of abs(data))
 find local minima of gradient(movingavg(left)) correspond to note playing
 from this analysis only consider wide enough rectangles and volume past a certain level
-3 - sample the audio at the start of notes/chords and before the next one
-4 - chord analysis on the sample
-5 - result: list of single notes or chords played through time
+ - sample the audio at the start of notes/chords and before the next one
+ - chord analysis on the sample
+ - result: list of single notes or chords played through time
 
 Liens Utiles:
 -------------
