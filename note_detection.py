@@ -306,7 +306,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 
 		# filter out low frequencies
 		# butter(ordre, freq de coupure, type(hp=passehaut), freq d'echantillonage)
-		b, a = signal.butter(5, 90, 'hp', fs=1/dt)
+		b, a = signal.butter(5, 30, 'hp', fs=1/dt)
 		sample = signal.filtfilt(b, a, sample) 
 
 		# fourier
@@ -334,7 +334,7 @@ def complex_sample_analysis(data, sample_times , dt, THRESHOLDMULT, FJUMP):
 		plot[v].plot(f_plot, fourier_mag_plot)
 		plot[v].set(title="Magnitude Spectrum via Fourier", xlabel="frequence (Hz)", ylabel="amplitude")
 		plot[v].axhline(THRESHOLD, color='red')
-		plot[v].set_xlim(left=-1000,right=5000)
+		plot[v].set_xlim(left=-100,right=4000)
 
 		# frequencies that have amplitude above threshold are sent to be identified
 		freqs_of_good_amp = freq_of_good_amplitude(THRESHOLD, fourier_mag_plot, f_plot, FJUMP)  
